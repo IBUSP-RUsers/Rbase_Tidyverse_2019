@@ -1,0 +1,644 @@
+---
+title: "Como começar a fazer análise de dados"
+subtitle: "R base e tidyverse para o biólogo iniciante"
+author : Vitor Aguiar
+output: 
+    ioslides_presentation:
+        incremental: true
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 18px;
+}
+pre {
+  font-size: 18px
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = "")
+
+options(width = 80, tibble.print_max = 10)
+```
+
+##  Por que R?
+
+- Colaboração, automação e reprodutibilidade
+
+- Grátis, código aberto, e disponível para várias plataformas
+
+- Comunidade grande
+
+- Número enorme de pacotes para estatística, manipulação de dados, visualização, genômica, etc
+
+- Permite pensar mais sobre suas análises
+
+- Funciona para um continuum de expertises: de usuário a programador
+
+
+# Como começar
+
+## Instalar o R
+
+
+- Download do site: https://www.r-project.org/
+
+
+- Gerenciadores de pacotes
+
+    - Linux: sudo apt-get install r-base
+    - MacOS: brew install r
+    
+## IDE
+
+
+```{r rstudio, echo = FALSE, out.width = "800px", fig.cap="\\label{fig:rstudio}Rstudio"}
+knitr::include_graphics("./figs/Rstudio.png")
+```
+
+
+## IDE
+
+```{r nvimr, echo = FALSE, out.width = "800px", fig.cap="\\label{fig:nvimr}Neovim + nvim-R"}
+knitr::include_graphics("./figs/nvimr.png")
+```
+
+## Dicas
+
+
+- Nunca modifique seu dado original
+
+- Guarde apenas seu dado de entrada, dado de resultado, e o código pra ir de um para o outro
+
+# OK, mas o que tem dentro do R?
+
+##
+
+```{r}
+sessionInfo()
+```
+
+##
+
+```{r}
+help(package = "base")
+```
+
+
+## Funções
+
+> - sum	
+> - log	
+> - exp
+> - mean
+> - median
+> - var
+> - sd
+> - sqrt
+> - lm
+> - apply
+
+
+##
+
+```{r}
+?Syntax
+```
+
+
+```{r, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("./figs/syntax.png")
+```
+
+
+
+## Objetos
+
+```{r}
+x <- 10
+a <- "banana"
+t <- TRUE
+```
+
+## 
+
+```{r}
+x + 1
+
+x ^ 2
+```
+
+##
+
+```{r}
+numbers <- 1:10
+```
+
+```{r}
+numbers + 1
+```
+
+```{r}
+numbers ^ 2
+```
+
+```{r}
+mean(numbers)
+```
+
+
+## Classes de objetos
+
+**vetor**
+
+```{r}
+#integer
+inteiros <- 1:5 
+
+# double
+numeros <- c(1, 2, 3, 4, 5) 
+
+# character
+frutas <- c("banana", "maçã", "laranja") 
+
+# logical
+resultados <- c(TRUE, FALSE, FALSE, TRUE) 
+```
+
+##
+
+**lista**
+
+```{r}
+
+lista <- list(inteiros = inteiros, 
+              frutas = frutas, 
+              resultados = resultados)
+
+lista
+```
+
+##
+
+**data.frame**
+
+```{r}
+d <- data.frame(inteiro = 1:3,
+                fruta = c("banana", "maçã", "laranja"),
+                resultado = c(TRUE, FALSE, FALSE))
+
+d
+```
+
+
+
+#  tidyverse
+
+##
+
+```{r, echo = FALSE, out.width = "800px"}
+knitr::include_graphics("./figs/tidyverse.png")
+```
+
+- importar dados -> tidy -> transformar -> explorar -> visualizar
+
+## Gramática de manipulação de dados
+
+>- mutate
+
+>- select
+
+>- filter
+
+>- summarise
+
+>- arrange
+
+>- pivot
+
+>- nest
+
+>- ...
+
+
+## 
+
+```{r}
+library(tidyverse)
+```
+
+## tidy data
+
+- Cada coluna é uma variável
+
+- Cada linha é uma observação
+
+- Cada célula é um valor
+
+
+```{r, echo = FALSE, out.width = "600px"}
+knitr::include_graphics("./figs/tidydata.png")
+```
+
+
+## Pipe
+
+<font size="80"> %>% </font>
+
+
+##
+
+```{r}
+pew <- read_csv("./data/pew.csv")
+```
+
+## 
+
+```{r}
+pew
+```
+
+##
+
+```{r}
+pew %>%
+    pivot_longer(-religion, names_to = "income", values_to = "count")
+```
+
+##
+
+```{r}
+who
+```
+
+##
+
+```{r}
+who %>%
+    pivot_longer(-(country:year), names_to = "info", values_to = "count")
+```
+
+##
+
+
+
+```{r}
+who %>%
+    pivot_longer(-(country:year), names_to = "info", values_to = "count") %>%
+    extract(info, c("diagnosis", "gender", "age"), "new_?(.*)_(.)(.+)") 
+```
+
+
+
+## 
+
+```{r}
+tidy_who <- who %>%
+    pivot_longer(-(country:year), names_to = "info", values_to = "count") %>%
+    extract(info, c("diagnosis", "gender", "age"), "new_?(.*)_(.)(.+)") 
+```
+
+##
+
+```{r}
+who_bra <- tidy_who %>% 
+    filter(country == "Brazil")
+```
+
+```{r}
+who_bra
+```
+
+##
+
+```{r}
+who_bra %>% 
+    filter(!is.na(count))
+```
+
+##
+
+```{r}
+who_bra %>%
+    filter(!is.na(count)) %>%
+    group_by(year, diagnosis) %>%
+    summarise(count = sum(count))
+```
+
+
+## Arquivo VCF
+
+```{r, message=FALSE, warning=FALSE}
+vcf <- read_tsv("./data/chr22.vcf", comment = "##")
+```
+
+##
+
+```{r}
+vcf
+```
+
+##
+
+```{r}
+vcf %>% select(INFO) 
+```
+
+##
+
+```{r}
+vcf %>% 
+    extract(INFO, "var_type", "VT=(.+);?")
+```
+
+##
+
+```{r}
+vcf %>% 
+    extract(INFO, "var_type", "VT=(.+);?") %>%
+    count(var_type)
+```
+
+##
+
+```{r}
+vcf %>% 
+    extract(INFO, "var_type", "VT=(.+);?") %>%
+    select(POS, REF, ALT, var_type, starts_with("HG"), starts_with("NA"))
+```
+
+##
+
+```{r}
+vcf %>% 
+    extract(INFO, "var_type", "VT=(.+);?") %>%
+    select(POS, REF, ALT, var_type, starts_with("HG"), starts_with("NA")) %>%
+    pivot_longer(-(1:4), names_to = "id", values_to = "genotype")
+```
+
+##
+
+```{r}
+vcf %>% 
+    extract(INFO, "var_type", "VT=(.+);?") %>%
+    select(POS, REF, ALT, var_type, starts_with("HG"), starts_with("NA")) %>%
+    pivot_longer(-(1:4), names_to = "id", values_to = "genotype") %>%
+    separate(genotype, c("hap1", "hap2"), sep = "\\|")
+``` 
+
+
+# Análise exploratória de dados
+
+## Caixeta
+
+```{r, message = FALSE}
+caixeta <- 
+  "http://ecologia.ib.usp.br/bie5782/lib/exe/fetch.php?media=dados:caixeta.csv" %>%
+  read_csv() %>%
+  arrange(local, arvore, fuste)
+```
+
+##
+
+```{r}
+caixeta
+```
+
+##
+
+```{r}
+caixeta %>%
+  group_by(local, arvore) %>%
+  filter(n_distinct(especie) > 1)
+```
+
+##
+
+```{r}
+caixeta %>%
+  group_by(local, arvore) %>%
+  filter(n_distinct(h) > 1)
+```
+
+## Expressão gênica
+
+```{r}
+genexp <- read_tsv("./data/expression_testdata.tsv")
+```
+
+##
+
+```{r}
+genexp 
+```
+
+##
+
+```{r}
+genexp %>% 
+    split(.$gene) 
+```
+
+##
+
+```{r}
+genexp %>% 
+    split(.$gene) %>%
+    map(~cor.test(.x$qpcr, .x$rnaseq)) %>% 
+    map(broom::tidy)
+```
+
+##
+
+```{r}
+genexp %>% 
+    split(.$gene) %>%
+    map(~cor.test(.x$qpcr, .x$rnaseq)) %>% 
+    map_df(broom::tidy, .id = "gene")
+```
+
+
+# Visualização
+
+## Gapminder data
+
+```{r gapminder, echo = FALSE, out.width = "800px"}
+knitr::include_graphics("./figs/gapminder.png")
+```
+
+##
+
+```{r message=FALSE, warning=FALSE}
+gapminder_lifeExp <- 
+    read_csv("./data/life_expectancy_years.csv")
+```
+
+```{r message=FALSE, warning=FALSE}
+gapminder_income <- 
+    read_csv("./data/income_per_person_gdppercapita_ppp_inflation_adjusted.csv")
+```
+
+```{r message=FALSE, warning=FALSE}
+gapminder_population <- 
+    read_csv("./data/population_total.csv")
+```
+
+```{r message=FALSE, warning=FALSE}
+gapminder_regions <- 
+    readxl::read_excel("./data/Data Geographies - v1 - by Gapminder.xlsx", 2)
+```
+
+
+##
+
+```{r}
+gapminder_lifeExp
+```
+
+##
+
+```{r}
+tidy_lifeExp <- gapminder_lifeExp %>%
+    pivot_longer(-country, names_to = "year", values_to = "life_exp")
+```
+
+```{r}
+tidy_lifeExp
+```
+
+
+##
+
+```{r}
+tidy_income <- gapminder_income %>%
+    pivot_longer(-country, names_to = "year", values_to = "income")
+```
+
+```{r}
+tidy_income
+```
+
+
+##
+
+```{r}
+tidy_pop <- gapminder_population %>%
+    pivot_longer(-country, names_to = "year", values_to = "pop")
+```
+
+```{r}
+tidy_pop
+```
+
+## 
+
+```{r}
+gapminder_regions
+```
+
+## 
+
+```{r}
+tidy_regions <- gapminder_regions %>%
+    select(country = name, region = four_regions)
+```
+
+## Join
+
+```{r}
+tidy_lifeExp
+```
+
+## 
+
+```{r}
+tidy_income
+```
+
+##
+
+```{r}
+inner_join(tidy_lifeExp, tidy_income, by = c("country", "year")) 
+```
+
+##
+
+```{r}
+inner_join(tidy_lifeExp, tidy_income, by = c("country", "year")) %>%
+    inner_join(tidy_pop, by = c("country", "year"))
+```
+
+##
+
+```{r}
+inner_join(tidy_lifeExp, tidy_income, by = c("country", "year")) %>%
+    inner_join(tidy_pop, by = c("country", "year")) %>%
+    left_join(tidy_regions, by = "country")
+```
+
+##
+
+```{r}
+gapminder <- inner_join(tidy_lifeExp, tidy_income, by = c("country", "year")) %>%
+    inner_join(tidy_pop, by = c("country", "year")) %>%
+    left_join(tidy_regions, by = "country") %>%
+    select(country, region, year, pop, life_exp, income)
+```
+
+```{r}
+gapminder
+```
+
+##
+
+```{r}
+gapminder18 <- gapminder %>%
+    filter(year == 2018)
+```
+
+## ggplot2
+
+```{r, warning=FALSE}
+ggplot(gapminder18, aes(x = income, y = life_exp))
+```
+
+##
+
+
+```{r, warning=FALSE}
+ggplot(gapminder18, aes(x = income, y = life_exp)) +
+    geom_point()
+```
+
+##
+
+```{r warning=FALSE, out.width = "600px", out.height= "300px"}
+gapminder18 %>%
+    arrange(desc(pop)) %>%
+    ggplot(aes(income, life_exp)) +
+    geom_point(aes(fill = region, size = pop), shape = 21) +
+    scale_x_log10(breaks = 2^(-1:7) * 1000) +
+    scale_y_continuous(breaks = seq(0, 80, 10), limits = c(0, 90)) +
+    scale_size(range = c(1, 20), guide = FALSE) +
+    ggsci::scale_fill_aaas() +
+    labs(x = "Income", y = "Life expectancy")
+```
+
+#  OK, mas ainda não sei como começar
+
+## Dicas finais:
+
+- Faça pequenos projetos
+
+- Use muito o Google
+
+- Entre para o grupo: ib-usp-r-users@googlegroups.com
+
+- Venha trabalhar conosco: www.ib.usp.br/genevol
+
